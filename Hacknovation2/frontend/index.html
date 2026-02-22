@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>EduLens – Class Evaluator</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,300&family=Cabinet+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f7f5f2;
+      --bg2: #eeeae3;
+      --surface: #ffffff;
+      --surface2: #f2efe9;
+      --border: #e2ddd5;
+      --accent: #d97706;
+      --accent2: #0284c7;
+      --accent3: #059669;
+      --green: #059669;
+      --red: #dc2626;
+      --yellow: #d97706;
+      --text: #1c1917;
+      --text2: #44403c;
+      --muted: #a8a29e;
+      --radius: 18px;
+      --shadow: 0 4px 24px rgba(0,0,0,0.07);
+      --shadow-lg: 0 12px 48px rgba(0,0,0,0.12);
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'Cabinet Grotesk', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ═══════════════════════════════════════
+       ANIMATED BACKGROUND BLOBS
+    ═══════════════════════════════════════ */
+        .bg-blobs {
+          position: fixed;
+          inset: 0;
+          pointer-events: none;
+          z-index: 0;
+          overflow: hidden;
+        }
+        
+        .blob {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(100px);
+          opacity: 0.4;
+          mix-blend-mode: multiply;
+        }
+        
+        .blob-1 {
+          width: 600px;
+          height: 600px;
+          background: radial-gradient(circle, #fde68a, #fbbf24);
+          top: -150px;
+          left: -150px;
+          animation: blobFloat 20s ease-in-out infinite;
+          animation-delay: 0s;
+        }
+        
+        .blob-2 {
+          width: 500px;
+          height: 500px;
+          background: radial-gradient(circle, #bae6fd, #38bdf8);
+          top: 20%;
+          right: -100px;
+          animation: blobFloat 25s ease-in-out infinite;
+          animation-delay: -5s;
+        }
+        
+        .blob-3 {
+          width: 450px;
+          height: 450px;
+          background: radial-gradient(circle, #bbf7d0, #34d399);
+          bottom: -100px;
+          left: 20%;
+          animation: blobFloat 22s ease-in-out infinite;
+          animation-delay: -10s;
+        }
+        
+        .blob-4 {
+          width: 550px;
+          height: 550px;
+          background: radial-gradient(circle, #fcd34d, #f59e0b);
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          animation: blobPulse 18s ease-in-out infinite;
+          animation-delay: -3s;
+        }
+        
+        .blob-5 {
+          width: 400px;
+          height: 400px;
+          background: radial-gradient(circle, #7dd3fc, #0ea5e9);
+          bottom: 10%;
+          right: 15%;
+          animation: blobFloat 28s ease-in-out infinite;
+          animation-delay: -15s;
+        }
+        
+        .blob-6 {
+          width: 480px;
+          height: 480px;
+          background: radial-gradient(circle, #86efac, #10b981);
+          top: 60%;
+          left: -120px;
+          animation: blobFloat 24s ease-in-out infinite;
+          animation-delay: -8s;
+        }
+        
+        @keyframes blobFloat {
+          0%, 100% {
+            transform: translate(0, 0) scale(1);
+          }
+          25% {
+            transform: translate(80px, -50px) scale(1.3);
+          }
+          50% {
+            transform: translate(-60px, 80px) scale(0.8);
+          }
+          75% {
+            transform: translate(60px, 40px) scale(1.15);
+          }
+        }
+        
+        @keyframes blobPulse {
+          0%, 100% {
+            transform: translate(-50%, -50%) scale(1);
+            opacity: 0.5;
+          }
+          33% {
+            transform: translate(-50%, -50%) scale(1.6);
+            opacity: 0.6;
+          }
+          66% {
+            transform: translate(-50%, -50%) scale(0.6);
+            opacity: 0.4;
+          }
+        }
+
+    /* ═══════════════════════════════════════
+       PAGE SECTIONS
+    ═══════════════════════════════════════ */
+    #landingPage, #appPage {
+      position: relative;
+      z-index: 1;
+    }
+    #appPage {
+      display: none;
+      animation: fadeSlideUp 0.6s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes fadeSlideUp {
+      from { opacity: 0; transform: translateY(32px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══════════════════════════════════════
+       LANDING PAGE
+    ═══════════════════════════════════════ */
+    
+    .landing-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 60px;
+      position: relative;
+    }
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .nav-logo-icon {
+      width: 36px; height: 36px;
+      background: var(--accent);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 18px;
+      box-shadow: 0 4px 16px rgba(217,119,6,0.3);
+    }
+    .nav-logo-text {
+      font-family: 'Fraunces', serif;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+    .nav-logo-text span { color: var(--accent); }
+    .nav-cta {
+      background: var(--text);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 11px 26px;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    }
+    .nav-cta:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+
+    /* HERO */
+    .hero {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 60px 60px 80px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 60px;
+      align-items: center;
+    }
+    .hero-left { animation: heroLeft 0.9s cubic-bezier(0.22,1,0.36,1) both; }
+    .hero-right { animation: heroRight 0.9s cubic-bezier(0.22,1,0.36,1) 0.15s both; }
+    @keyframes heroLeft {
+      from { opacity: 0; transform: translateX(-40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes heroRight {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 6px 14px;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      box-shadow: var(--shadow);
+    }
+    .hero-eyebrow::before {
+      content: '';
+      width: 7px; height: 7px;
+      background: var(--accent);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .hero-headline {
+      font-family: 'Fraunces', serif;
+      font-size: clamp(40px, 5vw, 64px);
+      font-weight: 900;
+      line-height: 1.05;
+      letter-spacing: -2px;
+      margin-bottom: 20px;
+      color: var(--text);
+    }
+    .hero-headline em {
+      font-style: italic;
+      color: var(--accent);
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--text2);
+      line-height: 1.7;
+      margin-bottom: 36px;
+      max-width: 440px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .btn-hero-primary {
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      border-radius: 999px;
+      padding: 15px 34px;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
+      box-shadow: 0 6px 24px rgba(217,119,6,0.35);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .btn-hero-primary:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(217,119,6,0.45);
+      background: #b45309;
+    }
+    .btn-hero-primary svg { transition: transform 0.2s; }
+    .btn-hero-primary:hover svg { transform: translateX(3px); }
+
+    .btn-hero-ghost {
+      background: none;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      padding: 14px 28px;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text2);
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, transform 0.2s;
+    }
+    .btn-hero-ghost:hover {
+      border-color: var(--text2);
+      color: var(--text);
+      transform: translateY(-2px);
+    }
+
+    .hero-stats {
+      display: flex;
+      gap: 32px;
+      margin-top: 44px;
+      padding-top: 32px;
+      border-top: 1px solid var(--border);
+    }
+    .hero-stat-val {
+      font-family: 'Fraunces', serif;
+      font-size: 30px;
+      font-weight: 900;
+      color: var(--text);
+    }
+    .hero-stat-lbl {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* HERO RIGHT - preview card */
+    .hero-preview {
+      background: var(--surface);
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow-lg);
+      position: relative;
+    }
+    .hero-preview::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 26px;
+      background: linear-gradient(135deg, rgba(217,119,6,0.15), rgba(2,132,199,0.1), rgba(5,150,105,0.1));
+      z-index: -1;
+    }
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+    .preview-title {
+      font-family: 'Fraunces', serif;
+      font-size: 15px;
+      font-weight: 700;
+    }
+    .preview-badge {
+      background: rgba(5,150,105,0.12);
+      color: var(--green);
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 10px;
+    }
+    .preview-chart-wrap {
+      height: 120px;
+      background: var(--bg);
+      border-radius: 12px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: flex-end;
+      gap: 8px;
+      padding: 16px;
+      overflow: hidden;
+    }
+    .preview-bar {
+      flex: 1;
+      border-radius: 6px 6px 0 0;
+      background: linear-gradient(180deg, var(--accent) 0%, rgba(217,119,6,0.4) 100%);
+      animation: barGrow 1.2s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes barGrow {
+      from { transform: scaleY(0); transform-origin: bottom; }
+      to   { transform: scaleY(1); transform-origin: bottom; }
+    }
+    .preview-bar:nth-child(1) { height: 70%; animation-delay: 0.2s; }
+    .preview-bar:nth-child(2) { height: 85%; background: linear-gradient(180deg, var(--accent2) 0%, rgba(2,132,199,0.4) 100%); animation-delay: 0.3s; }
+    .preview-bar:nth-child(3) { height: 55%; animation-delay: 0.4s; }
+    .preview-bar:nth-child(4) { height: 90%; background: linear-gradient(180deg, var(--accent3) 0%, rgba(5,150,105,0.4) 100%); animation-delay: 0.5s; }
+    .preview-bar:nth-child(5) { height: 65%; animation-delay: 0.6s; }
+    .preview-bar:nth-child(6) { height: 78%; background: linear-gradient(180deg, var(--accent2) 0%, rgba(2,132,199,0.4) 100%); animation-delay: 0.7s; }
+    .preview-students {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .preview-student-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+    }
+    .preview-avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .preview-stu-name { flex: 1; color: var(--text2); font-weight: 500; }
+    .preview-stu-score { font-weight: 800; font-family: 'Fraunces', serif; font-size: 15px; }
+    .preview-stu-bar { flex: 2; height: 4px; background: var(--bg2); border-radius: 99px; overflow: hidden; }
+    .preview-stu-fill { height: 100%; border-radius: 99px; }
+
+    /* FEATURES SECTION */
+    .features-section {
+      max-width: 1100px;
+      margin: 0 auto 80px;
+      padding: 0 60px;
+      animation: fadeSlideUp 0.9s cubic-bezier(0.22,1,0.36,1) 0.3s both;
+    }
+    .features-eyebrow {
+      text-align: center;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .features-title {
+      text-align: center;
+      font-family: 'Fraunces', serif;
+      font-size: 36px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 48px;
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      box-shadow: var(--shadow);
+      transition: transform 0.25s, box-shadow 0.25s;
+    }
+    .feature-card:hover { transform: translateY(-6px); box-shadow: var(--shadow-lg); }
+    .feature-icon {
+      width: 48px; height: 48px;
+      border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 16px;
+    }
+    .feature-card h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text2);
+      line-height: 1.65;
+    }
+
+    /* ═══════════════════════════════════════
+       APP PAGE HEADER
+    ═══════════════════════════════════════ */
+    .app-header {
+      padding: 22px 48px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.7);
+      backdrop-filter: blur(12px);
+      position: sticky;
+      top: 0;
+      z-index: 50;
+    }
+    .app-header .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .app-header .logo-icon {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      box-shadow: 0 4px 12px rgba(217,119,6,0.3);
+    }
+    .app-header .logo-text {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 700;
+    }
+    .app-header .logo-text span { color: var(--accent); }
+    .btn-back {
+      display: flex; align-items: center; gap: 6px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text2);
+      cursor: pointer;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    .btn-back:hover { border-color: var(--text2); color: var(--text); }
+
+    /* ═══════════════════════════════════════
+       APP CONTAINER
+    ═══════════════════════════════════════ */
+    .container {
+      max-width: 1100px;
+      margin: 48px auto;
+      padding: 0 32px;
+    }
+
+    .section-title {
+      font-family: 'Fraunces', serif;
+      font-size: 32px;
+      font-weight: 800;
+      letter-spacing: -1px;
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      color: var(--muted);
+      font-size: 15px;
+      margin-bottom: 36px;
+    }
+
+    /* ═══════════════════════════════════════
+       UPLOAD CARDS
+    ═══════════════════════════════════════ */
+    .upload-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .upload-card {
+      background: var(--surface);
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 28px;
+      transition: border-color 0.25s, box-shadow 0.25s, transform 0.25s;
+      cursor: pointer;
+      box-shadow: var(--shadow);
+    }
+    .upload-card:hover {
+      border-color: var(--accent);
+      box-shadow: 0 8px 32px rgba(217,119,6,0.12);
+      transform: translateY(-4px);
+    }
+    .upload-card label {
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+    .upload-card .upload-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 700;
+      font-size: 17px;
+      margin-bottom: 14px;
+      color: var(--text);
+    }
+    .upload-card input[type="file"] {
+      width: 100%;
+      font-size: 13px;
+      color: var(--muted);
+      background: none;
+      border: none;
+      outline: none;
+      cursor: pointer;
+      font-family: 'Cabinet Grotesk', sans-serif;
+    }
+    .upload-card input[type="file"]::-webkit-file-upload-button {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 7px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-right: 10px;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .upload-card input[type="file"]::-webkit-file-upload-button:hover {
+      background: var(--bg2);
+      border-color: var(--accent);
+    }
+    .upload-hint {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 10px;
+    }
+    code {
+      font-size: 11px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      padding: 1px 6px;
+      color: var(--accent2);
+      font-family: 'Courier New', monospace;
+    }
+
+    /* ═══════════════════════════════════════
+       ANALYZE BUTTON
+    ═══════════════════════════════════════ */
+    .btn-analyze {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--accent);
+      color: #fff;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-weight: 800;
+      font-size: 15px;
+      border: none;
+      border-radius: 999px;
+      padding: 14px 34px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 6px 24px rgba(217,119,6,0.3);
+      letter-spacing: 0.01em;
+    }
+    .btn-analyze:hover:not(:disabled) {
+      opacity: 0.9;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(217,119,6,0.4);
+    }
+    .btn-analyze:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2.5px solid rgba(255,255,255,0.35);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ═══════════════════════════════════════
+       RESULTS SECTION
+    ═══════════════════════════════════════ */
+    #resultsSection {
+      display: none;
+      margin-top: 52px;
+      animation: fadeSlideUp 0.7s cubic-bezier(0.22,1,0.36,1) both;
+    }
+
+    .results-grid {
+      display: grid;
+      grid-template-columns: 260px 1fr;
+      gap: 20px;
+      margin-bottom: 24px;
+      align-items: start;
+    }
+
+    /* PIE CHART CARD */
+    .pie-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px;
+      text-align: center;
+      box-shadow: var(--shadow);
+    }
+    .pie-card .pie-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 16px;
+      font-weight: 700;
+    }
+    .pie-card canvas { width: 180px !important; height: 180px !important; margin: 0 auto; }
+    .pie-stats {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 20px;
+    }
+    .pie-stat .val {
+      font-family: 'Fraunces', serif;
+      font-size: 26px;
+      font-weight: 900;
+    }
+    .pie-stat .lbl {
+      font-size: 11px;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+    }
+    .pie-stat.correct .val { color: var(--green); }
+    .pie-stat.wrong .val { color: var(--red); }
+
+    /* CLASS AVERAGES */
+    .averages-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px;
+      box-shadow: var(--shadow);
+    }
+    .averages-card h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 22px;
+    }
+    .avg-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      margin-bottom: 16px;
+    }
+    .avg-row .avg-label {
+      width: 160px;
+      font-size: 14px;
+      color: var(--text2);
+      flex-shrink: 0;
+      font-weight: 500;
+    }
+    .avg-bar-track {
+      flex: 1;
+      height: 7px;
+      background: var(--bg2);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .avg-bar-fill {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width 1s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    .avg-val {
+      font-family: 'Fraunces', serif;
+      font-size: 14px;
+      font-weight: 800;
+      width: 42px;
+      text-align: right;
+      color: var(--text);
+    }
+
+    /* INSIGHTS */
+    .insights-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 28px;
+      margin-bottom: 22px;
+      box-shadow: var(--shadow);
+    }
+    .insights-card h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .weakness-badge {
+      display: inline-block;
+      background: rgba(217,119,6,0.1);
+      color: var(--accent);
+      border: 1px solid rgba(217,119,6,0.25);
+      border-radius: 999px;
+      font-size: 12px;
+      padding: 4px 14px;
+      margin-bottom: 18px;
+      font-weight: 700;
+    }
+    .insights-cols {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 14px;
+    }
+    .insight-block h4 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .insight-block li {
+      font-size: 14px;
+      color: var(--text2);
+      margin-bottom: 9px;
+      padding-left: 18px;
+      position: relative;
+      line-height: 1.55;
+      list-style: none;
+    }
+    .insight-block li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 12px;
+    }
+    .missed-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 10px;
+    }
+    .missed-tag {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 12px;
+      padding: 4px 11px;
+      color: var(--accent2);
+      font-weight: 600;
+    }
+
+    /* STUDENT TABLE */
+    .table-card {
+      background: var(--surface);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      overflow: hidden;
+      box-shadow: var(--shadow);
+    }
+    .table-card h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 18px;
+      font-weight: 700;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    thead th {
+      background: var(--bg);
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.09em;
+      color: var(--muted);
+      padding: 13px 20px;
+      text-align: left;
+      font-weight: 700;
+    }
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background 0.15s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: rgba(0,0,0,0.02); }
+    tbody td {
+      padding: 14px 20px;
+      font-size: 14px;
+    }
+
+    .verdict-pill {
+      display: inline-block;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 11px;
+    }
+    .verdict-correct  { background: rgba(5,150,105,0.1);  color: var(--green); }
+    .verdict-partial  { background: rgba(217,119,6,0.1);  color: var(--yellow); }
+    .verdict-incorrect{ background: rgba(220,38,38,0.1);  color: var(--red); }
+
+    .btn-more {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      color: var(--accent2);
+      font-size: 12px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s, transform 0.15s;
+      font-family: 'Cabinet Grotesk', sans-serif;
+      font-weight: 600;
+    }
+    .btn-more:hover {
+      border-color: var(--accent2);
+      background: rgba(2,132,199,0.06);
+      transform: translateY(-1px);
+    }
+
+    .score-num {
+      font-family: 'Fraunces', serif;
+      font-weight: 800;
+      font-size: 15px;
+    }
+
+    /* ═══════════════════════════════════════
+       MODAL
+    ═══════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-overlay.active {
+      display: flex;
+      animation: modalFadeIn 0.3s ease both;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+    .modal-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(28,25,23,0.5);
+      backdrop-filter: blur(6px);
+    }
+    .modal {
+      position: relative;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 30px;
+      width: min(920px, 95vw);
+      max-height: 85vh;
+      overflow-y: auto;
+      z-index: 101;
+      box-shadow: 0 40px 100px rgba(0,0,0,0.2);
+      animation: modalScale 0.35s cubic-bezier(0.22,1,0.36,1) both;
+    }
+    @keyframes modalScale {
+      from { opacity: 0; transform: scale(0.93) translateY(16px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 22px;
+    }
+    .modal-header h3 {
+      font-family: 'Fraunces', serif;
+      font-size: 20px;
+      font-weight: 800;
+    }
+    .modal-header .meta {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+    .btn-close {
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      color: var(--muted);
+      font-size: 16px;
+      width: 36px; height: 36px;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: color 0.15s, border-color 0.15s;
+    }
+    .btn-close:hover { color: var(--text); border-color: var(--text2); }
+    .modal table thead th { background: var(--bg); }
+    .modal-footer {
+      margin-top: 22px;
+      text-align: right;
+    }
+
+    .mini-bar {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 100px;
+    }
+    .mini-bar-track {
+      flex: 1;
+      height: 5px;
+      background: var(--bg2);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .mini-bar-fill {
+      height: 100%;
+      border-radius: 99px;
+    }
+    .mini-bar .mini-val {
+      font-size: 12px;
+      font-weight: 700;
+      width: 34px;
+      text-align: right;
+      color: var(--text2);
+    }
+
+    /* SCROLLBAR */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+    /* RESPONSIVE */
+    @media (max-width: 768px) {
+      .hero { grid-template-columns: 1fr; padding: 40px 24px 60px; gap: 40px; }
+      .hero-right { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+      .features-section { padding: 0 24px; }
+      .landing-nav { padding: 20px 24px; }
+      .results-grid { grid-template-columns: 1fr; }
+      .upload-grid { grid-template-columns: 1fr; }
+      .insights-cols { grid-template-columns: 1fr; }
+      .container { padding: 0 20px; }
+      .app-header { padding: 16px 24px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Animated background blobs -->
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+  <div class="blob blob-4"></div>
+  <div class="blob blob-5"></div>
+  <div class="blob blob-6"></div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     LANDING PAGE
+══════════════════════════════════════════ -->
+<div id="landingPage">
+
+  <nav class="landing-nav sticky-nav">
+    <div class="nav-logo">
+      <div class="nav-logo-icon">🔍</div>
+      <div class="nav-logo-text">Edu<span>Lens</span></div>
+    </div>
+    <button class="nav-cta" onclick="goToApp()">Get Started →</button>
+  </nav>
+
+  <section class="hero">
+    <div class="hero-left">
+      <div class="hero-eyebrow">AI-Powered Class Evaluation</div>
+      <h1 class="hero-headline">
+        Grade smarter,<br/><em>not harder.</em>
+      </h1>
+      <p class="hero-desc">
+        Upload your answer keys and student submissions once. EduLens evaluates the entire class instantly using semantic, keyword, and contextual scoring.
+      </p>
+      <div class="hero-actions">
+        <button class="btn-hero-primary" onclick="goToApp()">
+          Evaluate My Class
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </button>
+        <button class="btn-hero-ghost" onclick="scrollToFeatures()">See How It Works</button>
+      </div>
+      <div class="hero-stats">
+        <div>
+          <div class="hero-stat-val">3x</div>
+          <div class="hero-stat-lbl">Faster grading</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">99%</div>
+          <div class="hero-stat-lbl">Accuracy rate</div>
+        </div>
+        <div>
+          <div class="hero-stat-val">∞</div>
+          <div class="hero-stat-lbl">Students at once</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="hero-right">
+      <div class="hero-preview">
+        <div class="preview-header">
+          <div class="preview-title">Class Overview — Batch 3B</div>
+          <div class="preview-badge">✓ Complete</div>
+        </div>
+        <div class="preview-chart-wrap">
+          <div class="preview-bar"></div>
+          <div class="preview-bar"></div>
+          <div class="preview-bar"></div>
+          <div class="preview-bar"></div>
+          <div class="preview-bar"></div>
+          <div class="preview-bar"></div>
+        </div>
+        <div class="preview-students">
+          <div class="preview-student-row">
+            <div class="preview-avatar" style="background:#d97706;">AK</div>
+            <div class="preview-stu-name">Aryan K.</div>
+            <div class="preview-stu-bar"><div class="preview-stu-fill" style="width:88%;background:#d97706;"></div></div>
+            <div class="preview-stu-score" style="color:#d97706;">88%</div>
+          </div>
+          <div class="preview-student-row">
+            <div class="preview-avatar" style="background:#0284c7;">SM</div>
+            <div class="preview-stu-name">Sara M.</div>
+            <div class="preview-stu-bar"><div class="preview-stu-fill" style="width:74%;background:#0284c7;"></div></div>
+            <div class="preview-stu-score" style="color:#0284c7;">74%</div>
+          </div>
+          <div class="preview-student-row">
+            <div class="preview-avatar" style="background:#059669;">LP</div>
+            <div class="preview-stu-name">Lena P.</div>
+            <div class="preview-stu-bar"><div class="preview-stu-fill" style="width:95%;background:#059669;"></div></div>
+            <div class="preview-stu-score" style="color:#059669;">95%</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="features-section" id="featuresSection">
+    <p class="features-eyebrow">Capabilities</p>
+    <h2 class="features-title">Everything you need, nothing you don't</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(217,119,6,0.1);">🧠</div>
+        <h3>Semantic Analysis</h3>
+        <p>Understands the meaning behind student answers — not just keywords — rewarding genuine understanding even with varied phrasing.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(2,132,199,0.1);">🔑</div>
+        <h3>Keyword Matching</h3>
+        <p>Checks for critical domain-specific terms and concepts that must appear in correct answers, ensuring academic rigor.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(5,150,105,0.1);">📐</div>
+        <h3>Context Scoring</h3>
+        <p>Evaluates whether answers are contextually appropriate and coherent, going beyond surface-level correctness.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(168,85,247,0.1);">📊</div>
+        <h3>Class Insights</h3>
+        <p>Automatically identifies weak areas, common mistakes, and knowledge gaps across the entire class with actionable recommendations.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(236,72,153,0.1);">⚡</div>
+        <h3>Batch Processing</h3>
+        <p>Evaluate an entire class in seconds by uploading simple CSV files — no manual grading, no spreadsheets, no headaches.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon" style="background:rgba(20,184,166,0.1);">🎯</div>
+        <h3>Per-Student Drilldown</h3>
+        <p>Click into any student to see question-by-question breakdowns with individual semantic, keyword, and context scores.</p>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /landingPage -->
+
+<!-- ══════════════════════════════════════════
+     APP PAGE
+══════════════════════════════════════════ -->
+<div id="appPage">
+
+  <header class="app-header sticky-nav">
+    <div class="logo">
+      <div class="logo-icon">🔍</div>
+      <div class="logo-text">Edu<span>Lens</span></div>
+    </div>
+    <button class="btn-back" onclick="goToLanding()">← Back to Home</button>
+  </header>
+
+  <div class="container">
+    <p class="section-title">Class Evaluation</p>
+    <p class="section-sub">Upload teacher model answers and student submissions to evaluate the entire class at once.</p>
+
+    <div class="upload-grid">
+      <div class="upload-card">
+        <label>Teacher File</label>
+        <div class="upload-title">📋 Model Answers</div>
+        <input type="file" id="modelFile" accept=".csv"/>
+        <p class="upload-hint">CSV format: <code>question_id</code>, <code>answer</code></p>
+      </div>
+      <div class="upload-card">
+        <label>Student File</label>
+        <div class="upload-title">🎓 Student Submissions</div>
+        <input type="file" id="studentsFile" accept=".csv"/>
+        <p class="upload-hint">CSV format: <code>student_id</code>, then one column per question ID (e.g. <code>Q1</code>, <code>Q2</code>...)</p>
+      </div>
+    </div>
+
+    <button class="btn-analyze" id="analyzeBtn" onclick="analyzeClass()">
+      <div class="spinner" id="spinner"></div>
+      <span id="btnText">Analyze Class</span>
+    </button>
+
+    <!-- ── RESULTS ── -->
+    <div id="resultsSection">
+
+      <div class="results-grid">
+        <div class="pie-card">
+          <p class="pie-label">Overall Class Score</p>
+          <canvas id="overallChart"></canvas>
+          <div class="pie-stats">
+            <div class="pie-stat correct">
+              <div class="val" id="correctPct">–</div>
+              <div class="lbl">Correct</div>
+            </div>
+            <div class="pie-stat wrong">
+              <div class="val" id="wrongPct">–</div>
+              <div class="lbl">Wrong</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="averages-card">
+          <h3>Class Averages</h3>
+          <div class="avg-row">
+            <span class="avg-label">Semantic Score</span>
+            <div class="avg-bar-track"><div class="avg-bar-fill" id="barSem" style="width:0%"></div></div>
+            <span class="avg-val" id="valSem">–</span>
+          </div>
+          <div class="avg-row">
+            <span class="avg-label">Keyword Score</span>
+            <div class="avg-bar-track"><div class="avg-bar-fill" id="barKw" style="width:0%"></div></div>
+            <span class="avg-val" id="valKw">–</span>
+          </div>
+          <div class="avg-row">
+            <span class="avg-label">Context Score</span>
+            <div class="avg-bar-track"><div class="avg-bar-fill" id="barCtx" style="width:0%"></div></div>
+            <span class="avg-val" id="valCtx">–</span>
+          </div>
+          <div class="avg-row">
+            <span class="avg-label">Overall %</span>
+            <div class="avg-bar-track"><div class="avg-bar-fill" id="barFinal" style="width:0%"></div></div>
+            <span class="avg-val" id="valFinal">–</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="insights-card">
+        <h3>🔍 Class Insights</h3>
+        <div class="weakness-badge" id="primaryWeakness">–</div>
+
+        <div id="missedConceptsWrap" style="display:none; margin-bottom:14px;">
+          <p style="font-size:11px;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-bottom:6px;font-weight:700;">Commonly Missed Concepts</p>
+          <div class="missed-tags" id="missedTags"></div>
+        </div>
+
+        <div class="insights-cols">
+          <div class="insight-block">
+            <h4>Insights</h4>
+            <ul id="insightsList"></ul>
+          </div>
+          <div class="insight-block">
+            <h4>Action Plan</h4>
+            <ul id="actionsList"></ul>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <h3>Student Results</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Student ID</th>
+              <th>Avg Score</th>
+              <th>Semantic</th>
+              <th>Keyword</th>
+              <th>Context</th>
+              <th>Verdict</th>
+              <th>Details</th>
+            </tr>
+          </thead>
+          <tbody id="classTbody"></tbody>
+        </table>
+      </div>
+
+    </div><!-- /resultsSection -->
+  </div><!-- /container -->
+
+</div><!-- /appPage -->
+
+<!-- ── MODAL ── -->
+<div class="modal-overlay" id="studentModal">
+  <div class="modal-backdrop" onclick="closeStudentModal()"></div>
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <h3 id="modalStudentTitle">Student Details</h3>
+        <p class="meta" id="modalStudentMeta"></p>
+      </div>
+      <button class="btn-close" onclick="closeStudentModal()">✕</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Question</th>
+          <th>Semantic</th>
+          <th>Keyword</th>
+          <th>Context</th>
+          <th>Total %</th>
+          <th>Verdict</th>
+        </tr>
+      </thead>
+      <tbody id="studentDetailsBody"></tbody>
+    </table>
+    <div class="modal-footer">
+      <button class="btn-more" onclick="closeStudentModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ══════════════════════════════════
+     PAGE NAVIGATION
+  ══════════════════════════════════ */
+  function goToApp() {
+    const landing = document.getElementById('landingPage');
+    const app     = document.getElementById('appPage');
+    landing.style.transition = 'opacity 0.4s ease, transform 0.4s ease';
+    landing.style.opacity = '0';
+    landing.style.transform = 'translateY(-20px)';
+    setTimeout(() => {
+      landing.style.display = 'none';
+      landing.style.opacity = '';
+      landing.style.transform = '';
+      app.style.display = 'block';
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 380);
+  }
+
+  function goToLanding() {
+    const landing = document.getElementById('landingPage');
+    const app     = document.getElementById('appPage');
+    app.style.transition = 'opacity 0.3s ease';
+    app.style.opacity = '0';
+    setTimeout(() => {
+      app.style.display = 'none';
+      app.style.opacity = '';
+      landing.style.display = 'block';
+      landing.style.opacity = '0';
+      landing.style.transition = 'opacity 0.4s ease';
+      requestAnimationFrame(() => { landing.style.opacity = '1'; });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }, 280);
+  }
+
+  function scrollToFeatures() {
+    document.getElementById('featuresSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  /* ══════════════════════════════════
+     EXISTING APP LOGIC (PRESERVED)
+  ══════════════════════════════════ */
+  let overallChart = null;
+  let classData = null;
+
+  function verdictClass(v) {
+    if (!v) return '';
+    const l = v.toLowerCase();
+    if (l.includes('correct') && !l.includes('partial') && !l.includes('in')) return 'verdict-correct';
+    if (l.includes('partial')) return 'verdict-partial';
+    return 'verdict-incorrect';
+  }
+
+  function miniBar(score, color) {
+    const pct = Math.round(score * 100);
+    return `
+      <div class="mini-bar">
+        <div class="mini-bar-track">
+          <div class="mini-bar-fill" style="width:${pct}%;background:${color}"></div>
+        </div>
+        <span class="mini-val">${score}</span>
+      </div>`;
+  }
+
+  async function analyzeClass() {
+    const modelFile    = document.getElementById("modelFile").files[0];
+    const studentsFile = document.getElementById("studentsFile").files[0];
+
+    if (!modelFile || !studentsFile) {
+      alert("Please upload both files before analyzing.");
+      return;
+    }
+
+    const btn     = document.getElementById("analyzeBtn");
+    const spinner = document.getElementById("spinner");
+    const btnText = document.getElementById("btnText");
+
+    btn.disabled = true;
+    spinner.style.display = "block";
+    btnText.textContent = "Analyzing…";
+
+    try {
+      const fd = new FormData();
+      fd.append("model_file", modelFile);
+      fd.append("students_file", studentsFile);
+
+      const res = await fetch("http://127.0.0.1:8000/analyze-class", {
+        method: "POST",
+        body: fd
+      });
+
+      if (!res.ok) {
+        const txt = await res.text();
+        throw new Error("Server error: " + txt);
+      }
+
+      classData = await res.json();
+      renderResults(classData);
+
+    } catch (err) {
+      console.error(err);
+      alert("Analysis failed: " + err.message);
+    } finally {
+      btn.disabled = false;
+      spinner.style.display = "none";
+      btnText.textContent = "Analyze Class";
+    }
+  }
+
+  function renderResults(data) {
+    // PIE CHART
+    const avg   = data.class_averages.final_avg_percent || 0;
+    const wrong = Math.max(0, 100 - avg);
+
+    document.getElementById("correctPct").textContent = avg + "%";
+    document.getElementById("wrongPct").textContent   = wrong + "%";
+
+    const canvas = document.getElementById("overallChart");
+    const ctx    = canvas.getContext("2d");
+    if (overallChart) overallChart.destroy();
+    overallChart = new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Correct", "Wrong"],
+        datasets: [{
+          data: [avg, wrong],
+          backgroundColor: ["#059669", "#dc2626"],
+          borderWidth: 0,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        cutout: "70%",
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            callbacks: { label: ctx => `${ctx.label}: ${ctx.parsed}%` }
+          }
+        }
+      }
+    });
+
+    // CLASS AVERAGES BARS
+    const ca = data.class_averages;
+    function setBar(barId, valId, score, isPercent = false) {
+      const pct = isPercent ? score : Math.round(score * 100);
+      document.getElementById(barId).style.width = pct + "%";
+      document.getElementById(valId).textContent = isPercent ? pct + "%" : score;
+    }
+    setBar("barSem",   "valSem",   ca.semantic_avg);
+    setBar("barKw",    "valKw",    ca.keyword_avg);
+    setBar("barCtx",   "valCtx",   ca.context_avg);
+    setBar("barFinal", "valFinal", ca.final_avg_percent, true);
+
+    // INSIGHTS
+    const fb = data.class_feedback || {};
+    document.getElementById("primaryWeakness").textContent = fb.primary_weakness || "–";
+
+    const tags     = fb.common_missed_concepts || [];
+    const tagsWrap = document.getElementById("missedConceptsWrap");
+    const tagsEl   = document.getElementById("missedTags");
+    if (tags.length) {
+      tagsEl.innerHTML = tags.map(t => `<span class="missed-tag">${t}</span>`).join("");
+      tagsWrap.style.display = "block";
+    } else {
+      tagsWrap.style.display = "none";
+    }
+
+    document.getElementById("insightsList").innerHTML =
+      (fb.insights || []).map(i => `<li>${i}</li>`).join("");
+    document.getElementById("actionsList").innerHTML =
+      (fb.action_plan || []).map(a => `<li>${a}</li>`).join("");
+
+    // STUDENT TABLE
+    const tbody = document.getElementById("classTbody");
+    tbody.innerHTML = "";
+    (data.students || []).forEach((stu, idx) => {
+      const vc = verdictClass(stu.verdict);
+      tbody.innerHTML += `
+        <tr>
+          <td style="font-family:'Fraunces',serif;font-weight:700">${stu.student_id}</td>
+          <td><span class="score-num">${stu.avg_percent}%</span></td>
+          <td>${stu.avg_semantic}</td>
+          <td>${stu.avg_keyword}</td>
+          <td>${stu.avg_context}</td>
+          <td><span class="verdict-pill ${vc}">${stu.verdict}</span></td>
+          <td><button class="btn-more" onclick="openStudentModal(${idx})">More Info</button></td>
+        </tr>`;
+    });
+
+    document.getElementById("resultsSection").style.display = "block";
+    document.getElementById("resultsSection").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function openStudentModal(idx) {
+    const stu = classData.students[idx];
+    document.getElementById("modalStudentTitle").textContent = "Student: " + stu.student_id;
+    document.getElementById("modalStudentMeta").textContent  =
+      `Overall: ${stu.avg_percent}%  ·  ${stu.verdict}`;
+
+    const body = document.getElementById("studentDetailsBody");
+    body.innerHTML = "";
+    (stu.details || []).forEach(d => {
+      const vc = verdictClass(d.verdict);
+      body.innerHTML += `
+        <tr>
+          <td style="font-family:'Fraunces',serif;font-weight:700">${d.question_id}</td>
+          <td>${miniBar(d.semantic_score, '#0284c7')}</td>
+          <td>${miniBar(d.keyword_score,  '#d97706')}</td>
+          <td>${miniBar(d.context_score,  '#a78bfa')}</td>
+          <td><span class="score-num">${d.final_percent}%</span></td>
+          <td><span class="verdict-pill ${vc}">${d.verdict}</span></td>
+        </tr>`;
+    });
+
+    document.getElementById("studentModal").classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeStudentModal() {
+    document.getElementById("studentModal").classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeStudentModal();
+  });
+</script>
+</body>
+</html>
